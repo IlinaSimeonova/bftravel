@@ -55,6 +55,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Test: `nginx -t`
 - Reload: `systemctl reload nginx`
 
+#### Background Workers (Django Q2)
+- Uses Django Q2 with PostgreSQL as the queue broker (no SQS)
+- Workers run in Docker containers via `workers/` folder
+
+**Local development:**
+```bash
+docker-compose -f workers/docker-compose.workers.yml -f workers/docker-compose.workers.local.yml up
+```
+
+**Production:** Workers need to be set up as a systemd service (TODO)
+
 ### Cloudflare SSL
 
 - DNS: A records pointing to 157.173.109.52 (proxied)

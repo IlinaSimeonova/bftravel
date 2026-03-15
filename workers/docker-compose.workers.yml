@@ -3,11 +3,11 @@ services:
     build:
       context: ..
       dockerfile: workers/Dockerfile.worker
-    command: python manage.py run_worker
+    command: python manage.py qcluster
     env_file:
       - ../.env
     environment:
-      - DJANGO_SETTINGS_MODULE=crm.settings
+      - DJANGO_SETTINGS_MODULE=bftravel.settings
     volumes:
       - ..:/app
     restart: unless-stopped
