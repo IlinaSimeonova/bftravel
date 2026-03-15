@@ -1,0 +1,4 @@
+Deploying is done through the bash scripts `deploy_to_production.sh` and `deploy_to_staging.sh`
+- when i ask you to deploy, please make sure you put a tag so i know which branch is deployed staging. staging-YYYY-MM-DD-N (where N = deployment number that day)
+- **CRITICAL**: Before deploying, check for duplicate migration numbers (For migrations after number 82). If migrations with the same number exist (e.g., two `0083_*.py` files), STOP deployment immediately and alert the user. This must be resolved before proceeding.
+- **NEVER manually git pull on staging/production servers**. Always use the deploy scripts which handle migrations, collectstatic, and service restarts. Manual pulls skip collectstatic causing stale JS/CSS files.

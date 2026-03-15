@@ -1,0 +1,3 @@
+"""Claude-Pilot — LLM-optimized codebase orientation for Claude Code."""
+
+__version__ = "0.1.0"

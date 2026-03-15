@@ -1,0 +1,16 @@
+services:
+  worker:
+    build:
+      context: ..
+      dockerfile: workers/Dockerfile.worker
+    command: python manage.py run_worker
+    env_file:
+      - ../.env
+    environment:
+      - DJANGO_SETTINGS_MODULE=crm.settings
+    volumes:
+      - ..:/app
+    restart: unless-stopped
+    stop_grace_period: 15s
+    deploy:
+      replicas: 3

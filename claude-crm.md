@@ -21,46 +21,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Environment & Server
 
-- Server: 157.173.109.52 (`ssh server` via ~/.ssh/config alias)
-- Domain: bauernfeind.travel (DNS via Cloudflare, proxied)
+- Server runs on port **9004** (`crm.lcl` via Caddy). Do not stop it. Do not use this port for anything else.
+- Do not kill my django server. it is usually not the issue
+- any python commands should be prefixed with the appropriate PYENV_VERSION so we activate the right environment
+- Access pages with curl to see what is going on.
+- when you curl, at the very bottom of the page is the JS console.log so you can see errors and debug logs!
+- if i tell you to curl the server and verify that pages work and the server is not responding, please tail the /_logs/debug.log
 - Assume all test paths are relative to project root
 
-### Production Structure
+### Redis Configuration
 
-```
-/var/www/bauernfeind.travel/
-├── app/                 # Django project (cloned from git)
-├── venv/                # virtualenv with Python 3.12
-├── static/              # Collected static files
-├── media/               # User uploads
-├── logs/                # Gunicorn logs
-└── gunicorn.sock        # Unix socket for Gunicorn
-```
-
-### Services
-
-#### Gunicorn
-- Service: `bftravel.service`
-- Socket: `bftravel.socket`
-- Start: `systemctl start bftravel`
-- Status: `systemctl status bftravel`
-- Logs: `/var/www/bauernfeind.travel/logs/`
-
-#### Nginx
-- Config: `/etc/nginx/sites-available/bauernfeind.travel`
-- Test: `nginx -t`
-- Reload: `systemctl reload nginx`
-
-### Cloudflare SSL
-
-- DNS: A records pointing to 157.173.109.52 (proxied)
-- SSL/TLS Mode: Full
-- Cloudflare handles SSL certificates automatically
-
-### Firewall (UFW)
-
-- Status: Active
-- Allowed ports: 22 (SSH), 80 (HTTP), 443 (HTTPS)
+- Redis is required for Django Channels (WebSocket support)
+- Install Redis: `brew install redis`
+- Start Redis: `brew services start redis`
+- Redis has 16 databases (0-15) - if running multiple projects, use different database numbers to avoid conflicts
+- Configure different database in .env: `REDIS_DB=1` (or any number 0-15)
+- Default connection: 127.0.0.1:6379 database 0
 
 ## Django Commands & Best Practices
 
@@ -68,12 +44,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Run all tests: `python manage.py test`
 - whenever you install something with pip install, always run freeze to requirements.txt
 - by default, when someone needs interfaces to edit stuff, let's stay away from django admin. we will be building our own UI for editing things.
-
-### Django Admin
-
-- URL: https://bauernfeind.travel/admin/
-- Email: ilina96@gmail.com
-- Password: admin123 (change this after first login)
 
 ## Database & Migrations
 
@@ -108,11 +78,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Models should have docstrings explaining their purpose
 - Use Django's built-in ORM methods over raw SQL when possible
 - if you need a logger, define one at the top and reuse it through the entire file.
-
-## Python Conventions
-
-- **Use `config()` from python-decouple, not `os.environ`** for reading environment variables.
-- **Always read env vars at runtime** (inside methods/functions), never at class level or import time.
 
 ## UI/Frontend Conventions
 
@@ -168,6 +133,11 @@ If this section is empty, extract patterns from the existing codebase before cre
 - Navigation depth should rarely exceed 2 levels from the main nav
 - Always include: empty states, loading states, error states
 - Mobile responsiveness is required unless explicitly told otherwise
+
+## Python Conventions
+
+- **Use `config()` from python-decouple, not `os.environ`** for reading environment variables.
+- **Always read env vars at runtime** (inside methods/functions), never at class level or import time.
 
 ## UI/CSS Development Guidelines
 
@@ -233,26 +203,7 @@ When a component needs to update reactively from external code (other JS files, 
 - Don't commit automatically to git. i will be letting you know if you need to commit on a per-feature base. so even if i told you in the past to commit to a feature, do not commit next feature unless you are told so specifically.
 - Only commit after testing. Never commit untested code.
 - Don't ever deploy to production, login to git pull, or modify files or scp there without my explicit ask
-- **Deploy script**: `./deploy.sh`
-
-### Deployment Commands
-
-```bash
-# Pull latest code
-cd /var/www/bauernfeind.travel/app && git pull
-
-# Install new dependencies
-/var/www/bauernfeind.travel/venv/bin/pip install -r requirements.txt
-
-# Run migrations
-/var/www/bauernfeind.travel/venv/bin/python manage.py migrate
-
-# Collect static files
-/var/www/bauernfeind.travel/venv/bin/python manage.py collectstatic --noinput
-
-# Restart Gunicorn
-systemctl restart bftravel
-```
+- **Deploy script**: `./deploy.sh` — pushes to main, creates a dated tag (`production-YYYY-MM-DD-N`), SSHs to server (`root@62.171.136.238`), pulls code, installs requirements, collectstatic, migrates, restarts gunicorn + nginx. Server project dir: `/var/www/crm`, server pyenv: `crm-3-12-0`.
 
 ## Branch & Commit Conventions
 
@@ -280,3 +231,13 @@ Use Playwright MCP tools for browser testing. Screenshots go to `browser-testing
 ## Reusable Systems Documentation
 
 **IMPORTANT**: When building any reusable system, component, or utility that could be used across the codebase, add a brief description here so Claude Code knows it exists for future tasks. Include enough detail to understand what it does and which files to examine.
+
+### Prompt Templating (Jinja2)
+
+- All LLM prompts live as `.md` files in the `prompts/` folder for easy read/edit and git tracking.
+- Use `load_prompt(name)` from `prompts/__init__.py` to load a prompt file (strips metadata header above `---`).
+- Use `render_prompt(template, **vars)` from `prompts.renderer` to render variables into prompts.
+- **Variable syntax**: Use `<<<variable>>>` delimiters (NOT `{variable}` or `{{ variable }}`). This avoids conflicts with JSON curly braces in prompt examples.
+- **Block syntax** (conditionals/loops): Use `<% if ... %>` / `<% for ... %>` / `<% endif %>` / `<% endfor %>`
+- `StrictUndefined` is enabled — missing variables raise errors at runtime.
+- JSON examples in prompts use clean `{ }` syntax with no escaping needed.
