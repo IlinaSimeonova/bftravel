@@ -5,6 +5,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Skills (Auto-Triggered)
+
+- **Architect** (`.claude/skills/architect/SKILL.md`): Activates automatically when a technical decision needs to be made. Stops work, presents options in plain language, waits for approval. MUST trigger before making any architectural or technology choice.
+
 ## General Behavior & Workflow
 
 - Be brief in answers.
