@@ -233,26 +233,22 @@ When a component needs to update reactively from external code (other JS files, 
 - Don't commit automatically to git. i will be letting you know if you need to commit on a per-feature base. so even if i told you in the past to commit to a feature, do not commit next feature unless you are told so specifically.
 - Only commit after testing. Never commit untested code.
 - Don't ever deploy to production, login to git pull, or modify files or scp there without my explicit ask
-- **Deploy script**: `./deploy.sh`
 
-### Deployment Commands
+### Deployment
+
+**ALWAYS use the deploy script. NEVER run deployment steps manually or separately.**
 
 ```bash
-# Pull latest code
-cd /var/www/bauernfeind.travel/app && git pull
-
-# Install new dependencies
-/var/www/bauernfeind.travel/venv/bin/pip install -r requirements.txt
-
-# Run migrations
-/var/www/bauernfeind.travel/venv/bin/python manage.py migrate
-
-# Collect static files
-/var/www/bauernfeind.travel/venv/bin/python manage.py collectstatic --noinput
-
-# Restart Gunicorn
-systemctl restart bftravel
+./deploy.sh
 ```
+
+The script handles everything:
+1. Warns about uncommitted changes
+2. Pushes to main branch
+3. Creates a deployment tag (e.g., `production-2026-03-15-1`)
+4. SSHs to server and runs: git pull, pip install, collectstatic, migrate, restart services
+
+Do NOT manually SSH to run individual deployment commands. Use the script.
 
 ## Branch & Commit Conventions
 

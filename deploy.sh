@@ -7,10 +7,10 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-echo -e "${YELLOW}Starting CRM deployment process...${NC}"
+echo -e "${YELLOW}Starting bftravel deployment process...${NC}"
 
-# Parse optional --ssh argument (default: same server as bigbongo)
-SSH_TARGET="root@62.171.136.238"
+# Parse optional --ssh argument (default: server alias from ~/.ssh/config)
+SSH_TARGET="server"
 while [[ $# -gt 0 ]]; do
     case $1 in
         --ssh)
@@ -57,56 +57,41 @@ git push origin $TAG_NAME
 
 # 3. SSH to server and run deployment steps
 echo -e "${YELLOW}Connecting to the server and deploying...${NC}"
-ssh $SSH_TARGET "sudo bash -s" <<'EOF'
+ssh $SSH_TARGET "bash -s" <<'EOF'
     set -e
     echo -e "\033[0;32mConnected to server\033[0m"
 
-    # Navigate to project directory
-    cd /var/www/crm
-    echo -e "\033[0;32mChanged to project directory\033[0m"
+    # Project paths
+    PROJECT_DIR="/var/www/bauernfeind.travel"
+    APP_DIR="${PROJECT_DIR}/app"
+    VENV_PYTHON="${PROJECT_DIR}/venv/bin/python"
+    VENV_PIP="${PROJECT_DIR}/venv/bin/pip"
 
-    # Set the SSH key explicitly
-    SSH_KEY_PATH=/root/.ssh/for-github-from-contabo
-
-    if [ ! -f "$SSH_KEY_PATH" ]; then
-        echo -e "\033[1;31mERROR: SSH key not found: $SSH_KEY_PATH\033[0m"
-        exit 1
-    fi
-
-    # Make sure GitHub's host key is in known_hosts
-    if ! grep -q "github.com" ~/.ssh/known_hosts; then
-        ssh-keyscan github.com >> ~/.ssh/known_hosts
-    fi
-
-    # Initialize pyenv and activate Python version
-    export PYENV_ROOT="$HOME/.pyenv"
-    export PATH="$PYENV_ROOT/bin:$PATH"
-    eval "$(pyenv init -)"
-    eval "$(pyenv init --path)"
-    export PYENV_VERSION="crm-3-12-0"
-    echo -e "\033[0;32mActivated Python environment: $PYENV_VERSION\033[0m"
+    # Navigate to app directory
+    cd $APP_DIR
+    echo -e "\033[0;32mChanged to app directory: $APP_DIR\033[0m"
 
     # Pull latest changes from main branch
-    GIT_SSH_COMMAND="ssh -i $SSH_KEY_PATH -o IdentitiesOnly=yes" git checkout main
-    GIT_SSH_COMMAND="ssh -i $SSH_KEY_PATH -o IdentitiesOnly=yes" git pull origin main
+    git checkout main
+    git pull origin main
     echo -e "\033[0;32mPulled latest changes from main branch\033[0m"
 
-    python --version
+    $VENV_PYTHON --version
 
     # Install/update requirements
-    python -m pip install -r requirements.txt
+    $VENV_PIP install -r requirements.txt
     echo -e "\033[0;32mInstalled/updated requirements\033[0m"
 
     # Collect static files
-    python manage.py collectstatic --noinput
+    $VENV_PYTHON manage.py collectstatic --noinput
     echo -e "\033[0;32mCollected static files\033[0m"
 
     # Run migrations
-    python manage.py migrate
+    $VENV_PYTHON manage.py migrate
     echo -e "\033[0;32mRan database migrations\033[0m"
 
     # Restart Gunicorn
-    systemctl restart crm.service
+    systemctl restart bftravel.service
     echo -e "\033[0;32mRestarted Gunicorn\033[0m"
 
     # Reload Nginx
@@ -115,7 +100,7 @@ ssh $SSH_TARGET "sudo bash -s" <<'EOF'
 
     # Check service status
     echo -e "\033[0;32mChecking service status:\033[0m"
-    systemctl status crm.service --no-pager | grep Active || true
+    systemctl status bftravel.service --no-pager | grep Active || true
     systemctl status nginx.service --no-pager | grep Active || true
 EOF
 
