@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}The Bauernfeinds{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex flex-col">
+
+    <!-- Hero Photo -->
+    <div class="relative h-[70vh] overflow-hidden">
+        <img src="{% static 'images/couple.jpg' %}" alt="Dessi & Martin" class="w-full h-full object-cover">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+
+        <!-- Names overlay -->
+        <div class="absolute bottom-12 left-0 right-0 text-center">
+            <h1 class="text-4xl md:text-6xl font-light text-white tracking-wide drop-shadow-lg">
+                Dessi & Martin
+            </h1>
+            <p class="text-white/80 text-lg mt-2 drop-shadow">Your adventures await</p>
+        </div>
+    </div>
+
+    <!-- Menu -->
+    <nav class="flex-1 flex items-center justify-center bg-stone-50 py-12">
+        <div class="flex flex-wrap justify-center gap-4 md:gap-6 px-4">
+            <a href="#" class="px-8 py-4 bg-white rounded-full shadow-md hover:shadow-lg transition-all text-stone-700 hover:text-stone-900 font-medium">
+                Destinations
+            </a>
+            <a href="#" class="px-8 py-4 bg-white rounded-full shadow-md hover:shadow-lg transition-all text-stone-700 hover:text-stone-900 font-medium">
+                Our Map
+            </a>
+            <a href="#" class="px-8 py-4 bg-white rounded-full shadow-md hover:shadow-lg transition-all text-stone-700 hover:text-stone-900 font-medium">
+                Trip Planner
+            </a>
+            <a href="#" class="px-8 py-4 bg-white rounded-full shadow-md hover:shadow-lg transition-all text-stone-700 hover:text-stone-900 font-medium">
+                Travel Info
+            </a>
+        </div>
+    </nav>
+
+</div>
+{% endblock %}

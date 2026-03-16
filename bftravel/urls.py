@@ -22,4 +22,5 @@ from . import views
 urlpatterns = [
     path('', views.home, name='home'),
     path('admin/', admin.site.urls),
+    path('dev/mockups/fonts/', views.mockup_fonts, name='mockup_fonts'),
 ]

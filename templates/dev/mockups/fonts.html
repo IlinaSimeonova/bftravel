@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}Font Mockup{% endblock %}
+
+{% block extra_head %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Serif+Display&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-stone-100 py-12">
+    <div class="max-w-6xl mx-auto px-4">
+
+        <h2 class="text-center text-stone-500 text-sm uppercase tracking-widest mb-12">Font Comparison</h2>
+
+        <div class="grid md:grid-cols-3 gap-8">
+
+            <!-- Option 1: Playfair Display -->
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <div class="h-48 bg-gradient-to-br from-stone-800 to-stone-600 flex items-center justify-center">
+                    <h1 style="font-family: 'Playfair Display', serif;" class="text-4xl text-white tracking-wide">
+                        Dessi & Martin
+                    </h1>
+                </div>
+                <div class="p-6 text-center">
+                    <h3 class="font-semibold text-stone-800 mb-2">1. Playfair Display</h3>
+                    <p class="text-stone-500 text-sm">Elegant with a bit of flair, like a fancy restaurant menu</p>
+                </div>
+            </div>
+
+            <!-- Option 2: Cormorant Garamond -->
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <div class="h-48 bg-gradient-to-br from-stone-800 to-stone-600 flex items-center justify-center">
+                    <h1 style="font-family: 'Cormorant Garamond', serif;" class="text-4xl text-white tracking-wide">
+                        Dessi & Martin
+                    </h1>
+                </div>
+                <div class="p-6 text-center">
+                    <h3 class="font-semibold text-stone-800 mb-2">2. Cormorant Garamond</h3>
+                    <p class="text-stone-500 text-sm">Light and airy, sophisticated but not stuffy</p>
+                </div>
+            </div>
+
+            <!-- Option 3: DM Serif Display -->
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                <div class="h-48 bg-gradient-to-br from-stone-800 to-stone-600 flex items-center justify-center">
+                    <h1 style="font-family: 'DM Serif Display', serif;" class="text-4xl text-white tracking-wide">
+                        Dessi & Martin
+                    </h1>
+                </div>
+                <div class="p-6 text-center">
+                    <h3 class="font-semibold text-stone-800 mb-2">3. DM Serif Display</h3>
+                    <p class="text-stone-500 text-sm">Modern classic, clean but has personality</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Larger preview section -->
+        <div class="mt-16 space-y-8">
+            <h2 class="text-center text-stone-500 text-sm uppercase tracking-widest mb-8">Larger Preview</h2>
+
+            <div class="bg-white rounded-2xl shadow-lg p-12 text-center">
+                <p class="text-stone-400 text-xs uppercase tracking-widest mb-4">Playfair Display</p>
+                <h1 style="font-family: 'Playfair Display', serif;" class="text-6xl text-stone-800 tracking-wide mb-4">
+                    Dessi & Martin
+                </h1>
+                <p style="font-family: 'Playfair Display', serif;" class="text-xl text-stone-500">
+                    Your adventures await
+                </p>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-lg p-12 text-center">
+                <p class="text-stone-400 text-xs uppercase tracking-widest mb-4">Cormorant Garamond</p>
+                <h1 style="font-family: 'Cormorant Garamond', serif;" class="text-6xl text-stone-800 tracking-wide mb-4">
+                    Dessi & Martin
+                </h1>
+                <p style="font-family: 'Cormorant Garamond', serif;" class="text-xl text-stone-500">
+                    Your adventures await
+                </p>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-lg p-12 text-center">
+                <p class="text-stone-400 text-xs uppercase tracking-widest mb-4">DM Serif Display</p>
+                <h1 style="font-family: 'DM Serif Display', serif;" class="text-6xl text-stone-800 tracking-wide mb-4">
+                    Dessi & Martin
+                </h1>
+                <p style="font-family: 'DM Serif Display', serif;" class="text-xl text-stone-500">
+                    Your adventures await
+                </p>
+            </div>
+        </div>
+
+        <div class="mt-12 text-center">
+            <a href="{% url 'home' %}" class="text-stone-500 hover:text-stone-700 text-sm">
+                &larr; Back to home
+            </a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
