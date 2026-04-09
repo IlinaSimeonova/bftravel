@@ -1,3 +1,4 @@
 .env
 __pycache__/
 *.pyc
+import_trips.py
