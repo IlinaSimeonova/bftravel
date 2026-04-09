@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Layout & Color Mockup{% endblock %}
+
+{% block extra_head %}
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-stone-200 py-12">
+    <div class="max-w-7xl mx-auto px-4">
+
+        <h2 class="text-center text-stone-500 text-sm uppercase tracking-widest mb-4">Layout & Color Palettes</h2>
+        <p class="text-center text-stone-400 text-sm mb-12">Each option shows: Hero section → Map section (scroll within each)</p>
+
+        <div class="space-y-16">
+
+            <!-- OPTION 1: Warm Neutrals -->
+            <div>
+                <h3 class="text-center text-stone-600 font-semibold mb-4">1. Warm Neutrals</h3>
+                <p class="text-center text-stone-400 text-sm mb-6">Creams, tans, soft browns — cozy, timeless</p>
+
+                <div class="rounded-2xl overflow-hidden shadow-2xl">
+                    <!-- Hero -->
+                    <div class="relative h-[50vh] bg-gradient-to-br from-amber-100 via-orange-50 to-stone-100">
+                        <!-- Fake photo placeholder -->
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="w-64 h-80 bg-stone-300 rounded-lg shadow-lg flex items-center justify-center text-stone-500">
+                                [Your photo here]
+                            </div>
+                        </div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-stone-900/40 via-transparent to-transparent"></div>
+
+                        <!-- Names -->
+                        <div class="absolute bottom-8 left-0 right-0 text-center">
+                            <h1 style="font-family: 'Cormorant Garamond', serif;" class="text-5xl md:text-6xl font-medium text-white tracking-wide drop-shadow-lg">
+                                Dessi & Martin
+                            </h1>
+                            <p style="font-family: 'Cormorant Garamond', serif;" class="text-white/80 text-xl mt-2 drop-shadow">
+                                Our adventures around the world
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Map section -->
+                    <div class="bg-amber-50 py-12 px-8">
+                        <h2 style="font-family: 'Cormorant Garamond', serif;" class="text-3xl text-stone-700 text-center mb-8">Where we've been</h2>
+                        <div class="bg-stone-200 h-64 rounded-xl flex items-center justify-center text-stone-400">
+                            [Interactive map will go here]
+                        </div>
+                        <div class="flex justify-center gap-4 mt-8">
+                            <span class="px-4 py-2 bg-amber-100 text-amber-800 rounded-full text-sm">23 countries</span>
+                            <span class="px-4 py-2 bg-amber-100 text-amber-800 rounded-full text-sm">47 cities</span>
+                            <span class="px-4 py-2 bg-amber-100 text-amber-800 rounded-full text-sm">5 continents</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OPTION 2: Terracotta Tones -->
+            <div>
+                <h3 class="text-center text-stone-600 font-semibold mb-4">2. Terracotta Tones</h3>
+                <p class="text-center text-stone-400 text-sm mb-6">Rust, burnt orange, sand — adventurous, warm</p>
+
+                <div class="rounded-2xl overflow-hidden shadow-2xl">
+                    <!-- Hero -->
+                    <div class="relative h-[50vh] bg-gradient-to-br from-orange-200 via-amber-100 to-rose-100">
+                        <!-- Fake photo placeholder -->
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="w-64 h-80 bg-orange-300/50 rounded-lg shadow-lg flex items-center justify-center text-orange-700">
+                                [Your photo here]
+                            </div>
+                        </div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-orange-950/50 via-transparent to-transparent"></div>
+
+                        <!-- Names -->
+                        <div class="absolute bottom-8 left-0 right-0 text-center">
+                            <h1 style="font-family: 'Cormorant Garamond', serif;" class="text-5xl md:text-6xl font-medium text-white tracking-wide drop-shadow-lg">
+                                Dessi & Martin
+                            </h1>
+                            <p style="font-family: 'Cormorant Garamond', serif;" class="text-white/80 text-xl mt-2 drop-shadow">
+                                Our adventures around the world
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Map section -->
+                    <div class="bg-gradient-to-b from-orange-100 to-amber-50 py-12 px-8">
+                        <h2 style="font-family: 'Cormorant Garamond', serif;" class="text-3xl text-orange-900 text-center mb-8">Where we've been</h2>
+                        <div class="bg-orange-200/50 h-64 rounded-xl flex items-center justify-center text-orange-400">
+                            [Interactive map will go here]
+                        </div>
+                        <div class="flex justify-center gap-4 mt-8">
+                            <span class="px-4 py-2 bg-orange-200 text-orange-800 rounded-full text-sm">23 countries</span>
+                            <span class="px-4 py-2 bg-orange-200 text-orange-800 rounded-full text-sm">47 cities</span>
+                            <span class="px-4 py-2 bg-orange-200 text-orange-800 rounded-full text-sm">5 continents</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OPTION 3: Sage + Warm -->
+            <div>
+                <h3 class="text-center text-stone-600 font-semibold mb-4">3. Sage + Warm</h3>
+                <p class="text-center text-stone-400 text-sm mb-6">Muted greens with warm accents — earthy, fresh</p>
+
+                <div class="rounded-2xl overflow-hidden shadow-2xl">
+                    <!-- Hero -->
+                    <div class="relative h-[50vh] bg-gradient-to-br from-emerald-100 via-stone-100 to-amber-50">
+                        <!-- Fake photo placeholder -->
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="w-64 h-80 bg-emerald-200/50 rounded-lg shadow-lg flex items-center justify-center text-emerald-700">
+                                [Your photo here]
+                            </div>
+                        </div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-emerald-950/40 via-transparent to-transparent"></div>
+
+                        <!-- Names -->
+                        <div class="absolute bottom-8 left-0 right-0 text-center">
+                            <h1 style="font-family: 'Cormorant Garamond', serif;" class="text-5xl md:text-6xl font-medium text-white tracking-wide drop-shadow-lg">
+                                Dessi & Martin
+                            </h1>
+                            <p style="font-family: 'Cormorant Garamond', serif;" class="text-white/80 text-xl mt-2 drop-shadow">
+                                Our adventures around the world
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Map section -->
+                    <div class="bg-gradient-to-b from-emerald-50 to-stone-50 py-12 px-8">
+                        <h2 style="font-family: 'Cormorant Garamond', serif;" class="text-3xl text-emerald-900 text-center mb-8">Where we've been</h2>
+                        <div class="bg-emerald-100 h-64 rounded-xl flex items-center justify-center text-emerald-400">
+                            [Interactive map will go here]
+                        </div>
+                        <div class="flex justify-center gap-4 mt-8">
+                            <span class="px-4 py-2 bg-emerald-100 text-emerald-800 rounded-full text-sm">23 countries</span>
+                            <span class="px-4 py-2 bg-amber-100 text-amber-800 rounded-full text-sm">47 cities</span>
+                            <span class="px-4 py-2 bg-emerald-100 text-emerald-800 rounded-full text-sm">5 continents</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="mt-12 text-center">
+            <a href="{% url 'home' %}" class="text-stone-500 hover:text-stone-700 text-sm">
+                &larr; Back to home
+            </a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

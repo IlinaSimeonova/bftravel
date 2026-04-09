@@ -1,42 +1,644 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}The Bauernfeinds{% endblock %}
+{% block title %}Dessi & Martin{% endblock %}
 
 {% block content %}
-<div class="min-h-screen flex flex-col">
+<div class="min-h-screen relative" x-data="{
+    showWelcome: false,
+    showGifts: false,
+    showTripDetails: false,
+    giftOpened: false,
+    selectedPlace: null,
+    showPlaceModal: false,
+    map: null,
+    places: [],
+    demoMode: 'live',
+    showDemoPanel: false,
+    tripStartDate: new Date('2026-04-10'),
+    tripEndDate: new Date('2026-05-02'),
+    tripNotes: [],
+    newNote: '',
+    showNoteInput: false,
+    get tripState() {
+        if (this.demoMode !== 'live') return this.demoMode;
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        if (today < this.tripStartDate) return 'before';
+        if (today >= this.tripStartDate && today <= this.tripEndDate) return 'during';
+        return 'after';
+    },
+    init() {
+        if (!localStorage.getItem('welcomeSeen')) {
+            this.showWelcome = true;
+        }
+        const savedNotes = localStorage.getItem('thailandNotes');
+        if (savedNotes) {
+            this.tripNotes = JSON.parse(savedNotes);
+        }
+        this.initMap();
+    },
+    addNote() {
+        if (this.newNote.trim()) {
+            this.tripNotes.push({
+                id: Date.now(),
+                text: this.newNote.trim(),
+                date: new Date().toLocaleDateString()
+            });
+            localStorage.setItem('thailandNotes', JSON.stringify(this.tripNotes));
+            this.newNote = '';
+            this.showNoteInput = false;
+        }
+    },
+    deleteNote(id) {
+        this.tripNotes = this.tripNotes.filter(n => n.id !== id);
+        localStorage.setItem('thailandNotes', JSON.stringify(this.tripNotes));
+    },
+    closeWelcome() {
+        this.showWelcome = false;
+        localStorage.setItem('welcomeSeen', 'true');
+    },
+    openGift() {
+        this.giftOpened = true;
+        setTimeout(() => {
+            this.showGifts = true;
+        }, 400);
+    },
+    closeGifts() {
+        this.showGifts = false;
+        this.giftOpened = false;
+    },
+    initMap() {
+        setTimeout(() => {
+            const mapElement = document.getElementById('travel-map');
+            if (!mapElement) return;
 
-    <!-- Hero Photo -->
-    <div class="relative h-[70vh] overflow-hidden">
-        <img src="{% static 'images/couple.jpg' %}" alt="Dessi & Martin" class="w-full h-full object-cover">
-        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+            // Initialize the map
+            this.map = L.map('travel-map').setView([10, 110], 3);
 
-        <!-- Names overlay -->
-        <div class="absolute bottom-12 left-0 right-0 text-center">
-            <h1 class="text-4xl md:text-6xl font-light text-white tracking-wide drop-shadow-lg">
-                Dessi & Martin
-            </h1>
-            <p class="text-white/80 text-lg mt-2 drop-shadow">Your adventures await</p>
+            // Add Esri World Street Map (English labels)
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+                attribution: 'Tiles &copy; Esri',
+                maxZoom: 19,
+            }).addTo(this.map);
+
+            // Fetch and display visited places
+            fetch('/api/visited-places/')
+                .then(response => response.json())
+                .then(data => {
+                    this.places = data.places;
+
+                    // Add simple orange markers
+                    data.places.forEach(place => {
+                        const marker = L.circleMarker([place.latitude, place.longitude], {
+                            radius: 8,
+                            fillColor: '#f97316',
+                            color: '#fff',
+                            weight: 2,
+                            opacity: 1,
+                            fillOpacity: 0.8
+                        }).addTo(this.map);
+
+                        marker.on('click', () => {
+                            this.selectedPlace = place;
+                            this.showPlaceModal = true;
+                        });
+                    });
+
+                    // Fit map to show all markers
+                    if (data.places.length > 0) {
+                        const bounds = L.latLngBounds(data.places.map(p => [p.latitude, p.longitude]));
+                        this.map.fitBounds(bounds, { padding: [50, 50] });
+                    }
+                });
+        }, 100);
+    },
+    closePlaceModal() {
+        this.showPlaceModal = false;
+        this.selectedPlace = null;
+    }
+}">
+
+    <!-- Blurred background -->
+    <div class="fixed inset-0 z-0">
+        <img src="{% static 'images/mountain.jpg' %}" alt="" class="w-full h-full object-cover blur-[2px] scale-105">
+        <div class="absolute inset-0 bg-white/30"></div>
+    </div>
+
+    <!-- Gift button (top left) -->
+    <button @click="openGift()" class="fixed top-4 left-4 z-30 hover:scale-110 transition-transform duration-300" :class="giftOpened ? 'animate-bounce' : ''">
+        <img src="{% static 'images/giftbox-nobackground.jpg' %}" alt="Gift" class="w-14 h-14 object-cover rounded-xl shadow-lg">
+    </button>
+
+
+
+    <!-- First-time Welcome Modal (full screen) -->
+    <div x-show="showWelcome" x-transition:enter="transition ease-out duration-700" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-300" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 z-50 flex items-center justify-center p-6" style="background: linear-gradient(135deg, rgba(180, 130, 100, 0.92) 0%, rgba(160, 120, 110, 0.9) 100%);">
+
+        <div class="max-w-md w-full text-center">
+            <!-- Photo -->
+            <div x-show="showWelcome" x-transition:enter="transition ease-out duration-500 delay-300" x-transition:enter-start="opacity-0 scale-75" x-transition:enter-end="opacity-100 scale-100" class="mb-8">
+                <img src="{% static 'images/IMG_8104.jpg' %}" alt="Dessi & Martin" class="w-32 h-32 rounded-full object-cover mx-auto ring-4 ring-white/30 shadow-2xl">
+            </div>
+
+            <!-- Content -->
+            <div x-show="showWelcome" x-transition:enter="transition ease-out duration-500 delay-500" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+                <h2 style="font-family: 'Cormorant Garamond', serif;" class="text-4xl md:text-5xl text-amber-50 mb-6 drop-shadow-md">
+                    Welcome, Bauernfeinds!
+                </h2>
+                <p class="text-amber-50/95 text-xl leading-relaxed mb-4 px-4 italic">
+                    I believe few things connect people more than shared experiences.<br><br>
+                    I want to give you something to help you explore together, forever.<br><br>
+                    I hope you love it - at least as much as I love you.
+                </p>
+                <p class="text-amber-50/90 text-lg mb-2">
+                    Your forever best friend,<br>Ilina
+                </p>
+                <p class="text-amber-50/80 text-lg mb-6">
+                    #justthethreeofus
+                </p>
+            </div>
+
+            <!-- Button -->
+            <div x-show="showWelcome" x-transition:enter="transition ease-out duration-500 delay-700" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0">
+                <button @click="closeWelcome()" style="font-family: 'Cormorant Garamond', serif;" class="px-8 py-3 bg-white/90 backdrop-blur-sm text-orange-800 rounded-full hover:bg-white transition-all text-xl border border-white/50 shadow-md">
+                    Let's explore
+                </button>
+            </div>
         </div>
     </div>
 
-    <!-- Menu -->
-    <nav class="flex-1 flex items-center justify-center bg-stone-50 py-12">
-        <div class="flex flex-wrap justify-center gap-4 md:gap-6 px-4">
-            <a href="#" class="px-8 py-4 bg-white rounded-full shadow-md hover:shadow-lg transition-all text-stone-700 hover:text-stone-900 font-medium">
-                Destinations
-            </a>
-            <a href="#" class="px-8 py-4 bg-white rounded-full shadow-md hover:shadow-lg transition-all text-stone-700 hover:text-stone-900 font-medium">
-                Our Map
-            </a>
-            <a href="#" class="px-8 py-4 bg-white rounded-full shadow-md hover:shadow-lg transition-all text-stone-700 hover:text-stone-900 font-medium">
-                Trip Planner
-            </a>
-            <a href="#" class="px-8 py-4 bg-white rounded-full shadow-md hover:shadow-lg transition-all text-stone-700 hover:text-stone-900 font-medium">
-                Travel Info
-            </a>
+    <!-- Gifts panel (when clicking gift button) -->
+    <div x-show="showGifts" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" @click.self="closeGifts()" class="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm">
+
+        <!-- Slide-in panel -->
+        <div x-show="showGifts" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full" class="absolute left-0 top-0 h-full w-80 bg-gradient-to-b from-amber-50 to-orange-50 shadow-2xl">
+
+            <!-- Header -->
+            <div class="p-6 border-b border-stone-200/50">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <img src="{% static 'images/giftbox-nobackground.jpg' %}" alt="" class="w-8 h-8 object-cover rounded-lg">
+                        <h3 style="font-family: 'Cormorant Garamond', serif;" class="text-2xl text-stone-800">From Ilina</h3>
+                    </div>
+                    <button @click="closeGifts()" class="text-stone-400 hover:text-stone-600 transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <p class="text-stone-500 text-sm mt-1">your forever pearl babe.</p>
+            </div>
+
+            <!-- Content -->
+            <div class="p-6 space-y-4" x-data="{ showNote: false, showVoucher: false }">
+                <!-- Message card -->
+                <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-stone-200 cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all" @click="showNote = true">
+                    <div class="flex items-center gap-4">
+                        <img src="{% static 'images/envelope.jpg' %}" alt="Note" class="w-16 h-12 object-cover rounded-lg">
+                        <div>
+                            <p style="font-family: 'Cormorant Garamond', serif;" class="text-xl text-stone-800">A Note for You</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Note Modal -->
+                <div x-show="showNote" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" @click.self="showNote = false" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+                    <div x-show="showNote" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="bg-gradient-to-b from-amber-50 to-orange-50 rounded-3xl shadow-2xl max-w-sm w-full p-6 relative">
+                        <button @click="showNote = false" class="absolute top-4 right-4 text-orange-400 hover:text-orange-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                        <h3 style="font-family: 'Cormorant Garamond', serif;" class="text-2xl text-orange-900 mb-4">A Note for You</h3>
+                        <p class="text-orange-800/90 text-base leading-relaxed italic">
+                            I believe few things connect people more than shared experiences.<br><br>
+                            I want to give you something to help you explore together, forever.<br><br>
+                            I hope you love it - at least as much as I love you.
+                        </p>
+                        <p class="text-orange-700/80 text-sm mt-4">
+                            Your forever best friend,<br>Ilina
+                        </p>
+                        <p class="text-orange-600/60 text-sm mt-2">
+                            #justthethreeofus
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Voucher card -->
+                <div class="bg-white/80 backdrop-blur-sm rounded-2xl p-4 border border-stone-200 cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all" @click="showVoucher = true">
+                    <div class="flex items-center gap-4">
+                        <img src="{% static 'images/money.jpg' %}" alt="Adventures" class="w-16 h-12 object-cover rounded-lg">
+                        <div>
+                            <p style="font-family: 'Cormorant Garamond', serif;" class="text-xl text-stone-800">For Your Adventures</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Voucher Modal -->
+                <div x-show="showVoucher" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" @click.self="showVoucher = false" class="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+                    <div x-show="showVoucher" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="bg-gradient-to-b from-amber-50 to-orange-50 rounded-3xl shadow-2xl max-w-sm w-full p-6 relative">
+                        <button @click="showVoucher = false" class="absolute top-4 right-4 text-orange-400 hover:text-orange-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                        <h3 style="font-family: 'Cormorant Garamond', serif;" class="text-2xl text-orange-900 mb-4">For Your Adventures</h3>
+                        <p class="text-orange-800/90 text-base leading-relaxed">
+                            A little something coming your way on Revolut - spend it wisely (and by wisely I mean trips, mangoes and beers).
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
-    </nav>
+    </div>
+
+    <!-- Main content -->
+    <main class="relative z-10">
+
+        <!-- Hero Section -->
+        <div class="min-h-screen flex flex-col items-center justify-center px-6 py-12">
+
+            <!-- Title -->
+            <div class="text-center mb-8">
+                <h1 style="font-family: 'Cormorant Garamond', serif; text-shadow: 0 2px 8px rgba(255,255,255,0.8);" class="text-5xl md:text-7xl font-semibold text-amber-950 tracking-wide">
+                    Dessi & Martin
+                </h1>
+                <p style="font-family: 'Cormorant Garamond', serif; text-shadow: 0 2px 6px rgba(255,255,255,0.8);" class="text-amber-950 text-2xl md:text-3xl mt-3 font-medium">
+                    The Bauernfeind Adventures
+                </p>
+            </div>
+
+            <!-- Wedding photo -->
+            <div class="mb-10 flex justify-center">
+                <img src="{% static 'images/wedding.jpg' %}" alt="Dessi & Martin" class="h-40 w-auto rounded-2xl shadow-lg">
+            </div>
+
+            <!-- Plan trip button -->
+            <div class="flex justify-center">
+                <a href="{% url 'trip_planner:plan_trip' %}" style="font-family: 'Cormorant Garamond', serif;" class="px-8 py-3 bg-orange-100/90 backdrop-blur-sm text-orange-800 rounded-full hover:bg-orange-200/90 transition-all text-xl border border-orange-300/40 shadow-sm hover:shadow-md">
+                    Plan Next Trip
+                </a>
+            </div>
+
+            <!-- Booked Trips Section -->
+            {% if current_trip or upcoming_trips %}
+            <div class="mt-16">
+                <h2 style="font-family: 'Cormorant Garamond', serif; text-shadow: 0 2px 8px rgba(255,255,255,0.8);" class="text-3xl md:text-4xl text-amber-950 text-center mb-8 font-semibold">
+                    {% if current_trip %}Current Adventure{% else %}Upcoming Adventures{% endif %}
+                </h2>
+
+                <div class="max-w-xl mx-auto space-y-4">
+                    {% if current_trip %}
+                    <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg p-6 border border-white/50">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 style="font-family: 'Cormorant Garamond', serif;" class="text-2xl font-medium text-orange-900">{{ current_trip.destination }}</h3>
+                                <p class="text-orange-600/70 text-sm">{{ current_trip.start_date|date:"M j" }} - {{ current_trip.end_date|date:"M j, Y" }}</p>
+                            </div>
+                            <div class="text-center bg-orange-100/90 rounded-xl px-4 py-2">
+                                <p style="font-family: 'Cormorant Garamond', serif;" class="text-xl font-medium text-orange-800">Enjoy!</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% for trip in upcoming_trips %}
+                    {% if trip != current_trip %}
+                    <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg p-6 border border-white/50">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 style="font-family: 'Cormorant Garamond', serif;" class="text-2xl font-medium text-orange-900">{{ trip.destination }}</h3>
+                                <p class="text-orange-600/70 text-sm">{{ trip.start_date|date:"M j" }} - {{ trip.end_date|date:"M j, Y" }}</p>
+                            </div>
+                            <div class="text-center bg-orange-100/90 rounded-xl px-4 py-2">
+                                <p class="text-2xl font-bold text-orange-800" id="countdown-{{ trip.id }}"></p>
+                                <p class="text-orange-700/80 text-xs uppercase tracking-widest">days to go</p>
+                            </div>
+                        </div>
+                    </div>
+                    <script>
+                        (function() {
+                            const startDate = new Date('{{ trip.start_date|date:"Y-m-d" }}');
+                            const today = new Date();
+                            today.setHours(0,0,0,0);
+                            const days = Math.ceil((startDate - today) / (1000 * 60 * 60 * 24));
+                            document.getElementById('countdown-{{ trip.id }}').textContent = days;
+                        })();
+                    </script>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if past_trips %}
+            <div class="mt-12">
+                <p style="text-shadow: 0 1px 4px rgba(255,255,255,0.8);" class="text-amber-950 text-base text-center font-medium tracking-wide mb-4">Past Booked Adventures</p>
+                <div class="max-w-xl mx-auto space-y-2">
+                    {% for trip in past_trips %}
+                    <div class="flex items-center gap-4 bg-white/60 backdrop-blur-sm rounded-xl p-3">
+                        <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                            <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <h3 style="font-family: 'Cormorant Garamond', serif;" class="text-lg text-orange-900">{{ trip.destination }}</h3>
+                            <p class="text-orange-600/60 text-xs">{{ trip.start_date|date:"M j" }} - {{ trip.end_date|date:"M j, Y" }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Upcoming Trips Section -->
+        <div class="py-8 px-6 -mt-32" x-show="tripState !== 'after' && demoMode !== 'empty'">
+            <h2 style="font-family: 'Cormorant Garamond', serif; text-shadow: 0 2px 8px rgba(255,255,255,0.8);" class="text-4xl md:text-5xl text-amber-950 text-center mb-10 font-semibold" x-text="tripState === 'during' ? 'Current Adventure' : 'Upcoming Adventures'">
+                Upcoming Adventures
+            </h2>
+
+            <!-- Trip Card - Clickable -->
+            <div @click="showTripDetails = true" class="max-w-xl mx-auto bg-white/80 backdrop-blur-md rounded-3xl shadow-xl overflow-hidden border border-white/50 cursor-pointer hover:shadow-2xl hover:scale-[1.02] transition-all">
+                <!-- Trip Header with background image -->
+                <div class="relative h-48 overflow-hidden">
+                    <img src="{% static 'images/IMG_8093.jpg' %}" alt="Thailand" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+
+                    <!-- Demo toggle (top right of image) -->
+                    <div class="absolute top-3 right-3" @click.stop>
+                        <button @click="showDemoPanel = !showDemoPanel" class="text-white/50 hover:text-white/80 text-xs transition-colors">
+                            status
+                        </button>
+                        <div x-show="showDemoPanel" @click.outside="showDemoPanel = false" class="absolute right-0 mt-1 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-2 w-28 z-20">
+                            <div class="space-y-0.5">
+                                <button @click="demoMode = 'live'; showDemoPanel = false" class="w-full text-left px-2 py-1 rounded text-xs" :class="demoMode === 'live' ? 'bg-orange-100 text-orange-800' : 'hover:bg-gray-100 text-gray-600'">Live</button>
+                                <button @click="demoMode = 'before'; showDemoPanel = false" class="w-full text-left px-2 py-1 rounded text-xs" :class="demoMode === 'before' ? 'bg-orange-100 text-orange-800' : 'hover:bg-gray-100 text-gray-600'">Before</button>
+                                <button @click="demoMode = 'during'; showDemoPanel = false" class="w-full text-left px-2 py-1 rounded text-xs" :class="demoMode === 'during' ? 'bg-orange-100 text-orange-800' : 'hover:bg-gray-100 text-gray-600'">During</button>
+                                <button @click="demoMode = 'after'; showDemoPanel = false" class="w-full text-left px-2 py-1 rounded text-xs" :class="demoMode === 'after' ? 'bg-orange-100 text-orange-800' : 'hover:bg-gray-100 text-gray-600'">After</button>
+                                <button @click="demoMode = 'empty'; showDemoPanel = false" class="w-full text-left px-2 py-1 rounded text-xs" :class="demoMode === 'empty' ? 'bg-orange-100 text-orange-800' : 'hover:bg-gray-100 text-gray-600'">Empty</button>
+                                <div class="border-t border-gray-200 my-1"></div>
+                                <button @click="localStorage.removeItem('welcomeSeen'); showWelcome = true; showDemoPanel = false" class="w-full text-left px-2 py-1 rounded text-xs text-blue-600 hover:bg-blue-50">Reset welcome</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="absolute bottom-4 left-6 right-6 flex justify-between items-end">
+                        <div>
+                            <h3 style="font-family: 'Cormorant Garamond', serif;" class="text-4xl font-medium text-white">Thailand</h3>
+                            <p class="text-white/80 text-sm mt-1">Apr 10 - May 2, 2026</p>
+                        </div>
+                        <!-- Countdown (before trip) -->
+                        <div x-show="tripState === 'before'" class="text-center bg-orange-100/90 backdrop-blur-sm rounded-2xl px-5 py-3 shadow-lg">
+                            <p class="text-5xl font-bold text-orange-800 drop-shadow-sm" x-text="Math.ceil((new Date('2026-04-10') - new Date().setHours(0,0,0,0)) / (1000 * 60 * 60 * 24))"></p>
+                            <p class="text-orange-700/80 text-xs uppercase tracking-widest mt-1">days to go</p>
+                        </div>
+                        <!-- Enjoy message (during trip) -->
+                        <div x-show="tripState === 'during'" class="text-center bg-orange-100/90 backdrop-blur-sm rounded-2xl px-5 py-3 shadow-lg">
+                            <p style="font-family: 'Cormorant Garamond', serif;" class="text-2xl font-medium text-orange-800">Enjoy!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Past Adventures Section (shows when trip is over) -->
+        <div class="py-8 px-6" x-show="tripState === 'after' && demoMode !== 'empty'">
+            <div class="relative max-w-2xl mx-auto mb-6">
+                <p style="text-shadow: 0 1px 4px rgba(255,255,255,0.8);" class="text-amber-950 text-base text-center font-medium tracking-wide">Past Adventures</p>
+                <!-- Status toggle -->
+                <div class="absolute right-0 top-0">
+                    <button @click="showDemoPanel = !showDemoPanel" class="text-orange-500/40 hover:text-orange-500/70 text-xs transition-colors">
+                        status
+                    </button>
+                    <div x-show="showDemoPanel" @click.outside="showDemoPanel = false" class="absolute right-0 mt-1 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-2 w-28 z-20">
+                        <div class="space-y-0.5">
+                            <button @click="demoMode = 'live'; showDemoPanel = false" class="w-full text-left px-2 py-1 rounded text-xs" :class="demoMode === 'live' ? 'bg-orange-100 text-orange-800' : 'hover:bg-gray-100 text-gray-600'">Live</button>
+                            <button @click="demoMode = 'before'; showDemoPanel = false" class="w-full text-left px-2 py-1 rounded text-xs" :class="demoMode === 'before' ? 'bg-orange-100 text-orange-800' : 'hover:bg-gray-100 text-gray-600'">Before</button>
+                            <button @click="demoMode = 'during'; showDemoPanel = false" class="w-full text-left px-2 py-1 rounded text-xs" :class="demoMode === 'during' ? 'bg-orange-100 text-orange-800' : 'hover:bg-gray-100 text-gray-600'">During</button>
+                            <button @click="demoMode = 'after'; showDemoPanel = false" class="w-full text-left px-2 py-1 rounded text-xs" :class="demoMode === 'after' ? 'bg-orange-100 text-orange-800' : 'hover:bg-gray-100 text-gray-600'">After</button>
+                            <button @click="demoMode = 'empty'; showDemoPanel = false" class="w-full text-left px-2 py-1 rounded text-xs" :class="demoMode === 'empty' ? 'bg-orange-100 text-orange-800' : 'hover:bg-gray-100 text-gray-600'">Empty</button>
+                            <div class="border-t border-gray-200 my-1"></div>
+                            <button @click="localStorage.removeItem('welcomeSeen'); showWelcome = true; showDemoPanel = false" class="w-full text-left px-2 py-1 rounded text-xs text-blue-600 hover:bg-blue-50">Reset welcome</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="max-w-2xl mx-auto">
+                <div @click="showTripDetails = true" class="flex items-center gap-4 bg-white/60 backdrop-blur-sm rounded-2xl p-3 cursor-pointer hover:bg-white/80 transition-all">
+                    <img src="{% static 'images/IMG_8093.jpg' %}" alt="Thailand" class="w-16 h-16 object-cover rounded-xl">
+                    <div class="flex-1">
+                        <h3 style="font-family: 'Cormorant Garamond', serif;" class="text-xl text-orange-900">Thailand</h3>
+                        <p class="text-orange-600/60 text-xs">Apr 10 - May 2, 2026</p>
+                    </div>
+                    <div class="text-orange-400/50">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State (no trips planned) -->
+        <div class="py-8 px-6 -mt-32" x-show="demoMode === 'empty'">
+            <div class="max-w-xl mx-auto text-center">
+                <p style="font-family: 'Cormorant Garamond', serif; text-shadow: 0 2px 8px rgba(255,255,255,0.8);" class="text-2xl md:text-3xl text-amber-950 mb-6">
+                    It's time for another trip, sunshines
+                </p>
+                <a href="{% url 'trip_planner:plan_trip' %}" style="font-family: 'Cormorant Garamond', serif;" class="inline-block px-8 py-3 bg-orange-100/90 backdrop-blur-sm text-orange-800 rounded-full hover:bg-orange-200/90 transition-all text-xl border border-orange-300/40 shadow-sm hover:shadow-md">
+                    Plan Next Trip
+                </a>
+                <!-- Status toggle for empty state -->
+                <div class="mt-6">
+                    <button @click="showDemoPanel = !showDemoPanel" class="text-orange-500/40 hover:text-orange-500/70 text-xs transition-colors">
+                        status
+                    </button>
+                    <div x-show="showDemoPanel" @click.outside="showDemoPanel = false" class="inline-block mt-1 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg p-2 w-28">
+                        <div class="space-y-0.5">
+                            <button @click="demoMode = 'live'; showDemoPanel = false" class="w-full text-left px-2 py-1 rounded text-xs" :class="demoMode === 'live' ? 'bg-orange-100 text-orange-800' : 'hover:bg-gray-100 text-gray-600'">Live</button>
+                            <button @click="demoMode = 'before'; showDemoPanel = false" class="w-full text-left px-2 py-1 rounded text-xs" :class="demoMode === 'before' ? 'bg-orange-100 text-orange-800' : 'hover:bg-gray-100 text-gray-600'">Before</button>
+                            <button @click="demoMode = 'during'; showDemoPanel = false" class="w-full text-left px-2 py-1 rounded text-xs" :class="demoMode === 'during' ? 'bg-orange-100 text-orange-800' : 'hover:bg-gray-100 text-gray-600'">During</button>
+                            <button @click="demoMode = 'after'; showDemoPanel = false" class="w-full text-left px-2 py-1 rounded text-xs" :class="demoMode === 'after' ? 'bg-orange-100 text-orange-800' : 'hover:bg-gray-100 text-gray-600'">After</button>
+                            <button @click="demoMode = 'empty'; showDemoPanel = false" class="w-full text-left px-2 py-1 rounded text-xs" :class="demoMode === 'empty' ? 'bg-orange-100 text-orange-800' : 'hover:bg-gray-100 text-gray-600'">Empty</button>
+                            <div class="border-t border-gray-200 my-1"></div>
+                            <button @click="localStorage.removeItem('welcomeSeen'); showWelcome = true; showDemoPanel = false" class="w-full text-left px-2 py-1 rounded text-xs text-blue-600 hover:bg-blue-50">Reset welcome</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trip Details Modal -->
+        <div x-show="showTripDetails" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" @click.self="showTripDetails = false" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+
+            <div x-show="showTripDetails" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="bg-gradient-to-b from-amber-50 to-orange-50 rounded-3xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto">
+
+                <!-- Header with image -->
+                <div class="relative h-40 overflow-hidden rounded-t-3xl">
+                    <img src="{% static 'images/IMG_8093.jpg' %}" alt="Thailand" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                    <button @click="showTripDetails = false" class="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-2 text-white hover:bg-white/30 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                    <div class="absolute bottom-4 left-6">
+                        <h3 style="font-family: 'Cormorant Garamond', serif;" class="text-3xl font-medium text-white">Thailand</h3>
+                        <p class="text-white/80 text-sm">Apr 10 - May 2, 2026</p>
+                    </div>
+                </div>
+
+                <!-- Content -->
+                <div class="p-6 space-y-6">
+
+                    <!-- Notes Section -->
+                    <div>
+                        <h4 style="font-family: 'Cormorant Garamond', serif;" class="text-2xl text-orange-900 mb-3 font-medium">Notes</h4>
+
+                        <!-- Existing notes -->
+                        <div class="space-y-2 mb-3" x-show="tripNotes.length > 0">
+                            <template x-for="note in tripNotes" :key="note.id">
+                                <div class="bg-white/80 rounded-xl p-3 group relative">
+                                    <p class="text-orange-900 text-sm" x-text="note.text"></p>
+                                    <p class="text-orange-500/60 text-xs mt-1" x-text="note.date"></p>
+                                    <button @click="deleteNote(note.id)" class="absolute top-2 right-2 text-orange-300 hover:text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- Add note input -->
+                        <div x-show="showNoteInput" class="mb-3">
+                            <textarea x-model="newNote" @keydown.enter.meta="addNote()" @keydown.enter.ctrl="addNote()" placeholder="Write your note..." class="w-full bg-white/80 rounded-xl p-3 text-sm text-orange-900 placeholder-orange-400/60 border-none focus:ring-2 focus:ring-orange-300 resize-none" rows="3"></textarea>
+                            <div class="flex gap-2 mt-2">
+                                <button @click="addNote()" class="px-4 py-1.5 bg-orange-500 text-white text-sm rounded-lg hover:bg-orange-600 transition-colors">Save</button>
+                                <button @click="showNoteInput = false; newNote = ''" class="px-4 py-1.5 text-orange-500 text-sm hover:text-orange-700 transition-colors">Cancel</button>
+                            </div>
+                        </div>
+
+                        <!-- Add note button -->
+                        <button x-show="!showNoteInput" @click="showNoteInput = true" class="text-orange-500 hover:text-orange-700 text-sm flex items-center gap-1 bg-white/60 rounded-xl px-4 py-3 w-full justify-center hover:bg-white/80 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            Add note
+                        </button>
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="border-t border-orange-200/50"></div>
+
+                    <!-- Common Phrases -->
+                    <div>
+                        <h4 style="font-family: 'Cormorant Garamond', serif;" class="text-2xl text-orange-900 mb-4 font-medium">Common Phrases</h4>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center bg-white/80 rounded-xl p-4">
+                                <span class="text-orange-900 font-medium">Hello</span>
+                                <span class="text-orange-700 font-semibold">Sawadee (สวัสดี)</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-white/80 rounded-xl p-4">
+                                <span class="text-orange-900 font-medium">Thank you</span>
+                                <span class="text-orange-700 font-semibold">Khop khun (ขอบคุณ)</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-white/80 rounded-xl p-4">
+                                <span class="text-orange-900 font-medium">Yes / No</span>
+                                <span class="text-orange-700 font-semibold">Chai / Mai chai</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-white/80 rounded-xl p-4">
+                                <span class="text-orange-900 font-medium">How much?</span>
+                                <span class="text-orange-700 font-semibold">Tao rai? (เท่าไหร่)</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-white/80 rounded-xl p-4">
+                                <span class="text-orange-900 font-medium">Delicious</span>
+                                <span class="text-orange-700 font-semibold">Aroi (อร่อย)</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-white/80 rounded-xl p-4">
+                                <span class="text-orange-900 font-medium">No spicy</span>
+                                <span class="text-orange-700 font-semibold">Mai phet (ไม่เผ็ด)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="border-t border-orange-200/50"></div>
+
+                    <!-- Currency -->
+                    <div>
+                        <h4 style="font-family: 'Cormorant Garamond', serif;" class="text-2xl text-orange-900 mb-4 font-medium">Currency</h4>
+                        <div class="bg-white/80 rounded-xl p-5">
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="text-orange-900 font-semibold text-lg">Thai Baht (THB)</span>
+                                <span class="text-orange-700 text-2xl font-bold">฿</span>
+                            </div>
+                            <div class="text-orange-800 space-y-1">
+                                <p class="font-medium">1 EUR ≈ 38 THB</p>
+                                <p class="font-medium">1 USD ≈ 35 THB</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Place Details Modal (when clicking map marker) -->
+        <div x-show="showPlaceModal" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" @click.self="closePlaceModal()" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+
+            <div x-show="showPlaceModal" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100" class="bg-gradient-to-b from-amber-50 to-orange-50 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden">
+
+                <!-- Photo -->
+                <div class="relative h-64 overflow-hidden" x-show="selectedPlace">
+                    <img :src="selectedPlace?.photo_url" :alt="selectedPlace?.location" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                    <button @click="closePlaceModal()" class="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-2 text-white hover:bg-white/30 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                    <div class="absolute bottom-4 left-6">
+                        <h3 style="font-family: 'Cormorant Garamond', serif;" class="text-3xl font-medium text-white" x-text="selectedPlace?.location"></h3>
+                        <p class="text-white/80 text-sm" x-text="selectedPlace?.date_display"></p>
+                    </div>
+                </div>
+
+                <!-- Notes (if any) -->
+                <div class="p-6" x-show="selectedPlace?.notes">
+                    <p class="text-orange-900 leading-relaxed" x-text="selectedPlace?.notes"></p>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Map Section -->
+        <div class="py-16 px-6">
+            <h2 style="font-family: 'Cormorant Garamond', serif; text-shadow: 0 2px 8px rgba(255,255,255,0.8);" class="text-4xl md:text-5xl text-amber-950 text-center mb-10 font-semibold">
+                Where we've been
+            </h2>
+
+            <div class="max-w-6xl mx-auto">
+                <div class="bg-white/70 backdrop-blur-md rounded-3xl shadow-2xl border border-orange-200/30 overflow-hidden" style="height: 32rem;">
+                    <div id="travel-map" class="w-full h-full"></div>
+                </div>
+
+                <div class="flex justify-center gap-4 mt-8">
+                    <span class="px-5 py-2.5 bg-gradient-to-r from-orange-50 to-rose-50 text-orange-800 rounded-full text-sm font-medium shadow-md border border-orange-200/50">
+                        <span x-text="new Set(places.map(p => p.country)).size"></span> countries
+                    </span>
+                    <span class="px-5 py-2.5 bg-gradient-to-r from-orange-50 to-rose-50 text-orange-800 rounded-full text-sm font-medium shadow-md border border-orange-200/50">
+                        <span x-text="places.filter(p => p.city).length"></span> cities
+                    </span>
+                </div>
+            </div>
+        </div>
+
+    </main>
 
 </div>
 {% endblock %}
