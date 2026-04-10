@@ -2,12 +2,42 @@ import json
 import logging
 import re
 
+import anthropic
+from decouple import config
 from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
 from .models import BookedTrip, Destination
 from .services import get_destination_info
+
+WOODY_SYSTEM_PROMPT = """You are Woody, a friendly and knowledgeable travel assistant for Dessi & Martin's travel website.
+
+ABOUT DESSI & MARTIN:
+- Martin is from Austria, Dessi is from Bulgaria
+- They got married in January 2026
+- They are adventure travelers: certified divers, hikers, climbers
+- They stay in budget-friendly hotels and Airbnbs
+- They travel light - carry-on only when possible
+- Big foodies who love Asian cuisine especially
+- They love beer
+- They speak Bulgarian, German, and English
+- They enjoy impressive cultural sites like temples
+- They like a mix of active days and relaxation days
+- Flexible with schedules - can party late or wake at 4am for adventures
+- Dessi is afraid of heights (keep this in mind for recommendations)
+- They have a car but mostly use it for trips in Austria
+
+YOUR PERSONALITY:
+- Friendly, enthusiastic, but not over the top
+- Give practical, actionable advice
+- Keep responses concise - they're planning, not reading a novel
+- Use their names naturally in conversation
+- If recommending activities, remember Dessi's fear of heights
+- Suggest budget-friendly options when relevant
+- Recommend local food spots and craft beer places when appropriate
+
+When answering questions about a destination, be specific and helpful. If you don't know something, say so rather than making things up."""
 
 logger = logging.getLogger(__name__)
 
@@ -137,3 +167,49 @@ def delete_destination(request, destination_id):
         pass
 
     return redirect("trip_planner:plan_trip")
+
+
+@require_POST
+def woody_chat(request):
+    """Handle chat messages with Woody AI assistant."""
+    try:
+        data = json.loads(request.body)
+        message = data.get('message', '').strip()
+        destination = data.get('destination', '').strip()
+        history = data.get('history', [])
+
+        if not message:
+            return JsonResponse({'error': 'Message is required'}, status=400)
+
+        # Build system prompt with destination context
+        system = WOODY_SYSTEM_PROMPT
+        if destination:
+            system += f"\n\nCURRENT DESTINATION: The user is currently looking at {destination}. Focus your answers on this destination unless they ask about something else."
+
+        # Build messages list with history
+        messages = []
+        for msg in history:
+            messages.append({"role": msg['role'], "content": msg['content']})
+        messages.append({"role": "user", "content": message})
+
+        # Call Claude API
+        api_key = config('ANTHROPIC_API_KEY')
+        client = anthropic.Anthropic(api_key=api_key)
+
+        response = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=1024,
+            system=system,
+            messages=messages
+        )
+
+        return JsonResponse({
+            'response': response.content[0].text,
+            'success': True
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    except Exception as e:
+        logger.error(f"Woody chat error: {e}")
+        return JsonResponse({'error': 'Something went wrong'}, status=500)
