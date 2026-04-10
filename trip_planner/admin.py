@@ -1,6 +1,35 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import VisitedPlace
+
+from .models import BookedTrip, VisitedPlace
+
+
+@admin.register(BookedTrip)
+class BookedTripAdmin(admin.ModelAdmin):
+    list_display = ['destination', 'start_date', 'end_date', 'has_photo', 'has_coordinates']
+    list_filter = ['start_date']
+    search_fields = ['destination']
+    ordering = ['-start_date']
+
+    fieldsets = (
+        ('Trip Info', {
+            'fields': ('destination', 'start_date', 'end_date')
+        }),
+        ('Map Display (for after trip ends)', {
+            'fields': ('latitude', 'longitude', 'photo', 'notes'),
+            'description': 'Add coordinates and a photo to show this trip on the map after it ends.'
+        }),
+    )
+
+    def has_photo(self, obj):
+        return bool(obj.photo)
+    has_photo.boolean = True
+    has_photo.short_description = 'Photo'
+
+    def has_coordinates(self, obj):
+        return bool(obj.latitude and obj.longitude)
+    has_coordinates.boolean = True
+    has_coordinates.short_description = 'On Map'
 
 
 @admin.register(VisitedPlace)

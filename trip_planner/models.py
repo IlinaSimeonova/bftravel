@@ -41,10 +41,17 @@ class BookedTrip(models.Model):
     """
     Represents a trip that Dessi & Martin have booked.
     Shows on the landing page as upcoming/current/past adventure.
+    After the trip ends, it appears on the map.
     """
     destination = models.CharField(max_length=200, help_text="Destination name (e.g., Japan, Thailand)")
     start_date = models.DateField(help_text="Trip start date")
     end_date = models.DateField(help_text="Trip end date")
+
+    # For map display after trip ends
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, help_text="Latitude for map")
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, help_text="Longitude for map")
+    photo = models.ImageField(upload_to='trip_photos/', null=True, blank=True, help_text="Photo from the trip")
+    notes = models.TextField(blank=True, help_text="Notes about the trip")
 
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)

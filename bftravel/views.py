@@ -50,12 +50,14 @@ def home(request):
 
 def visited_places_api(request):
     """API endpoint that returns all visited places as JSON for the map."""
+    today = date.today()
     places = VisitedPlace.objects.all()
 
     data = []
     for place in places:
         data.append({
             'id': place.id,
+            'type': 'visited',
             'country': place.country,
             'city': place.city,
             'location': place.display_location,
@@ -65,6 +67,27 @@ def visited_places_api(request):
             'date_display': place.date_visited.strftime('%B %Y'),
             'photo_url': place.photo.url if place.photo else None,
             'notes': place.notes,
+        })
+
+    # Include past booked trips that have coordinates
+    past_trips = BookedTrip.objects.filter(
+        end_date__lt=today,
+        latitude__isnull=False,
+        longitude__isnull=False
+    )
+    for trip in past_trips:
+        data.append({
+            'id': f'trip-{trip.id}',
+            'type': 'trip',
+            'country': trip.destination,
+            'city': '',
+            'location': trip.destination,
+            'latitude': float(trip.latitude),
+            'longitude': float(trip.longitude),
+            'date_visited': trip.start_date.isoformat(),
+            'date_display': trip.start_date.strftime('%B %Y'),
+            'photo_url': trip.photo.url if trip.photo else None,
+            'notes': trip.notes,
         })
 
     return JsonResponse({'places': data})
