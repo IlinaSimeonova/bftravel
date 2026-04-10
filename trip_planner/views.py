@@ -8,7 +8,7 @@ from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
-from .models import BookedTrip, Destination, WoodyChat
+from .models import BookedTrip, Destination, VisitedPlace, WoodyChat
 from .services import get_destination_info
 
 WOODY_SYSTEM_PROMPT = """You are Woody, a friendly and knowledgeable travel assistant for Dessi & Martin's travel website.
@@ -196,6 +196,13 @@ def woody_chat(request):
 
         # Build system prompt with destination context
         system = WOODY_SYSTEM_PROMPT
+
+        # Add visited places to context
+        visited = VisitedPlace.objects.values_list('country', flat=True).distinct()
+        if visited:
+            visited_list = ", ".join(visited)
+            system += f"\n\nPLACES THEY'VE ALREADY VISITED: {visited_list}. You can reference these when relevant - compare destinations, mention their experience, or avoid suggesting places they've been unless they ask."
+
         system += f"\n\nCURRENT DESTINATION: The user is currently looking at {destination}. Focus your answers on this destination unless they ask about something else."
 
         # Call Claude API
