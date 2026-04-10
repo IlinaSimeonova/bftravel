@@ -455,7 +455,7 @@
                         <!-- Welcome message -->
                         <template x-if="messages.length === 0">
                             <div class="bg-white rounded-xl p-3 shadow-sm">
-                                <p class="text-gray-700 text-sm">Hey! I'm Woody, your travel buddy. Ask me anything about <span class="font-semibold text-orange-600">{{ destination }}</span> - best spots, food recommendations, travel tips, you name it!</p>
+                                <p class="text-gray-700 text-sm" x-html="welcomeMessage"></p>
                             </div>
                         </template>
 
@@ -522,12 +522,24 @@
 
             <script>
             function woodyChat() {
+                const greetings = {
+                    'Japan': "Hey Dessi & Martin! 🎌 Japan, huh? You two are gonna love it - the food alone is worth the trip. Ramen, sushi, izakayas... and craft beer scene is surprisingly good! What do you want to know?",
+                    'Nepal': "Hey Dessi & Martin! 🏔️ Nepal - now that's an adventure! Perfect for you two with the hiking and all. Just remember Dessi, some of those mountain trails are no joke height-wise. What can I help you plan?",
+                    'Mexico': "Hey Dessi & Martin! 🌮 Mexico is calling! Tacos, mezcal, cenotes, ancient ruins... honestly one of the best foodie destinations out there. What do you want to know?",
+                    'Madagascar': "Hey Dessi & Martin! 🦎 Madagascar - that's a bold choice, love it! Lemurs, baobabs, and some seriously off-the-beaten-path vibes. What are you curious about?",
+                    'South Korea': "Hey Dessi & Martin! 🇰🇷 South Korea! Amazing food, great hiking, and the craft beer scene has exploded there. Plus K-BBQ with soju? Yes please. How can I help?"
+                };
+                const defaultGreeting = `Hey Dessi & Martin! So you're looking at <span class="font-semibold text-orange-600">{{ destination }}</span> - nice choice! What do you want to know? I can help with food spots, activities, travel tips, whatever you need.`;
+
                 return {
                     isOpen: false,
                     isLoading: false,
                     input: '',
                     messages: [],
                     destination: '{{ destination }}',
+                    get welcomeMessage() {
+                        return greetings[this.destination] || defaultGreeting;
+                    },
 
                     async sendMessage() {
                         if (!this.input.trim() || this.isLoading) return;
