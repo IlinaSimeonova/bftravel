@@ -8,7 +8,7 @@ from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
-from .models import BookedTrip, Destination
+from .models import BookedTrip, Destination, WoodyChat
 from .services import get_destination_info
 
 WOODY_SYSTEM_PROMPT = """You are Woody, a friendly and knowledgeable travel assistant for Dessi & Martin's travel website.
@@ -176,21 +176,27 @@ def woody_chat(request):
         data = json.loads(request.body)
         message = data.get('message', '').strip()
         destination = data.get('destination', '').strip()
-        history = data.get('history', [])
 
         if not message:
             return JsonResponse({'error': 'Message is required'}, status=400)
 
+        if not destination:
+            return JsonResponse({'error': 'Destination is required'}, status=400)
+
+        # Save user message to database
+        WoodyChat.objects.create(
+            destination=destination,
+            role='user',
+            content=message
+        )
+
+        # Load chat history from database
+        history = WoodyChat.objects.filter(destination=destination).order_by('created_at')
+        messages = [{"role": msg.role, "content": msg.content} for msg in history]
+
         # Build system prompt with destination context
         system = WOODY_SYSTEM_PROMPT
-        if destination:
-            system += f"\n\nCURRENT DESTINATION: The user is currently looking at {destination}. Focus your answers on this destination unless they ask about something else."
-
-        # Build messages list with history
-        messages = []
-        for msg in history:
-            messages.append({"role": msg['role'], "content": msg['content']})
-        messages.append({"role": "user", "content": message})
+        system += f"\n\nCURRENT DESTINATION: The user is currently looking at {destination}. Focus your answers on this destination unless they ask about something else."
 
         # Call Claude API
         api_key = config('ANTHROPIC_API_KEY')
@@ -203,8 +209,17 @@ def woody_chat(request):
             messages=messages
         )
 
+        assistant_response = response.content[0].text
+
+        # Save assistant response to database
+        WoodyChat.objects.create(
+            destination=destination,
+            role='assistant',
+            content=assistant_response
+        )
+
         return JsonResponse({
-            'response': response.content[0].text,
+            'response': assistant_response,
             'success': True
         })
 
@@ -213,3 +228,12 @@ def woody_chat(request):
     except Exception as e:
         logger.error(f"Woody chat error: {e}")
         return JsonResponse({'error': 'Something went wrong'}, status=500)
+
+
+def woody_chat_history(request, destination):
+    """Load chat history for a destination."""
+    messages = WoodyChat.objects.filter(destination=destination).order_by('created_at')
+    return JsonResponse({
+        'messages': [{'role': msg.role, 'content': msg.content} for msg in messages],
+        'success': True
+    })

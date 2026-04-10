@@ -58,6 +58,22 @@ class BookedTrip(models.Model):
         return f"{self.destination} ({self.start_date} - {self.end_date})"
 
 
+class WoodyChat(models.Model):
+    """
+    Stores chat history with Woody AI assistant per destination.
+    """
+    destination = models.CharField(max_length=200, help_text="Destination being discussed")
+    role = models.CharField(max_length=20, help_text="user or assistant")
+    content = models.TextField(help_text="Message content")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f"{self.destination} - {self.role}: {self.content[:50]}"
+
+
 class VisitedPlace(models.Model):
     """
     Represents a place (country/city) that Dessi & Martin have visited.

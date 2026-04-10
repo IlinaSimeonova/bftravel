@@ -507,13 +507,13 @@
                          x-transition:enter-start="opacity-0 scale-90"
                          x-transition:enter-end="opacity-100 scale-100"
                          class="flex items-center gap-1 px-3 py-1.5 bg-orange-500 text-white rounded-full shadow-lg text-sm font-medium cursor-pointer hover:bg-orange-600 transition-colors"
-                         @click="isOpen = true">
+                         @click="isOpen = true; loadHistory()">
                         <span>Ask Woody about {{ destination }}</span>
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                         </svg>
                     </div>
-                    <button @click="isOpen = !isOpen" class="group relative">
+                    <button @click="isOpen = !isOpen; if(isOpen) loadHistory()" class="group relative">
                         <div x-show="!isOpen" class="absolute inset-0 rounded-full bg-orange-400 animate-ping opacity-30"></div>
                         <img src="{% static 'images/IMG_8096.jpg' %}" alt="Ask AI Woody" class="relative w-20 h-20 object-cover rounded-full shadow-xl ring-4 ring-orange-400 hover:ring-orange-500 transition-all group-hover:scale-110">
                     </button>
@@ -537,8 +537,29 @@
                     input: '',
                     messages: [],
                     destination: '{{ destination }}',
+                    historyLoaded: false,
+
                     get welcomeMessage() {
                         return greetings[this.destination] || defaultGreeting;
+                    },
+
+                    async loadHistory() {
+                        if (this.historyLoaded || !this.destination) return;
+
+                        try {
+                            const response = await fetch(`/plan-trip/woody-chat/history/${encodeURIComponent(this.destination)}/`);
+                            const data = await response.json();
+
+                            if (data.success && data.messages.length > 0) {
+                                this.messages = data.messages;
+                                this.$nextTick(() => {
+                                    this.$refs.messagesContainer.scrollTop = this.$refs.messagesContainer.scrollHeight;
+                                });
+                            }
+                            this.historyLoaded = true;
+                        } catch (error) {
+                            console.error('Failed to load chat history:', error);
+                        }
                     },
 
                     async sendMessage() {
@@ -562,8 +583,7 @@
                                 },
                                 body: JSON.stringify({
                                     message: userMessage,
-                                    destination: this.destination,
-                                    history: this.messages.slice(0, -1)
+                                    destination: this.destination
                                 })
                             });
 
