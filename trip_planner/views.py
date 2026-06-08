@@ -143,6 +143,18 @@ def book_trip(request):
 
 
 @require_POST
+def delete_booked_trip(request, trip_id):
+    """Delete a planned (booked) trip from the home page."""
+    try:
+        trip = BookedTrip.objects.get(id=trip_id)
+        trip.delete()
+    except BookedTrip.DoesNotExist:
+        pass
+
+    return redirect("home")
+
+
+@require_POST
 def upload_destination_photo(request, destination_id):
     """Handle photo upload for a destination."""
     try:

@@ -290,7 +290,12 @@
 
                 <div class="max-w-xl mx-auto space-y-4">
                     {% if current_trip %}
-                    <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg p-6 border border-white/50">
+                    <div class="group relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg p-6 border border-white/50">
+                        <button type="button" @click="if(confirm('Remove the trip to {{ current_trip.destination }}?')) $refs.deleteTripForm{{ current_trip.id }}.submit()" class="absolute -top-2 -right-2 w-7 h-7 bg-white/90 hover:bg-red-50 rounded-full shadow flex items-center justify-center text-red-500 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity z-10" title="Remove trip">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
                         <div class="flex justify-between items-center">
                             <div>
                                 <h3 style="font-family: 'Cormorant Garamond', serif;" class="text-2xl font-medium text-orange-900">{{ current_trip.destination }}</h3>
@@ -300,12 +305,20 @@
                                 <p style="font-family: 'Cormorant Garamond', serif;" class="text-xl font-medium text-orange-800">Enjoy!</p>
                             </div>
                         </div>
+                        <form x-ref="deleteTripForm{{ current_trip.id }}" method="post" action="{% url 'trip_planner:delete_booked_trip' current_trip.id %}" class="hidden">
+                            {% csrf_token %}
+                        </form>
                     </div>
                     {% endif %}
 
                     {% for trip in upcoming_trips %}
                     {% if trip != current_trip %}
-                    <div class="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg p-6 border border-white/50">
+                    <div class="group relative bg-white/80 backdrop-blur-md rounded-2xl shadow-lg p-6 border border-white/50">
+                        <button type="button" @click="if(confirm('Remove the trip to {{ trip.destination }}?')) $refs.deleteTripForm{{ trip.id }}.submit()" class="absolute -top-2 -right-2 w-7 h-7 bg-white/90 hover:bg-red-50 rounded-full shadow flex items-center justify-center text-red-500 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity z-10" title="Remove trip">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
                         <div class="flex justify-between items-center">
                             <div>
                                 <h3 style="font-family: 'Cormorant Garamond', serif;" class="text-2xl font-medium text-orange-900">{{ trip.destination }}</h3>
@@ -316,6 +329,9 @@
                                 <p class="text-orange-700/80 text-xs uppercase tracking-widest">days to go</p>
                             </div>
                         </div>
+                        <form x-ref="deleteTripForm{{ trip.id }}" method="post" action="{% url 'trip_planner:delete_booked_trip' trip.id %}" class="hidden">
+                            {% csrf_token %}
+                        </form>
                     </div>
                     <script>
                         (function() {
