@@ -22,12 +22,28 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-8frnc8e@3sy!z^bzu78wt1_i+@9(l9j5vvql6*3wdp@*w#&162'
+SECRET_KEY = config(
+    'SECRET_KEY',
+    default='django-insecure-8frnc8e@3sy!z^bzu78wt1_i+@9(l9j5vvql6*3wdp@*w#&162',
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '172.31.201.82', 'bauernfeind.travel', 'www.bauernfeind.travel']
+
+CSRF_TRUSTED_ORIGINS = ['https://bauernfeind.travel', 'https://www.bauernfeind.travel']
+
+# Production security settings (behind Cloudflare + Nginx HTTPS proxy).
+# Only applied when DEBUG is off so local development keeps working over HTTP.
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    # Share auth cookies across the root domain and the www subdomain so a
+    # redirect between them does not invalidate the CSRF token.
+    SESSION_COOKIE_DOMAIN = '.bauernfeind.travel'
+    CSRF_COOKIE_DOMAIN = '.bauernfeind.travel'
 
 
 # Application definition
